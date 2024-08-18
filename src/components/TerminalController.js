@@ -38,7 +38,7 @@ const TerminalController = (props = {}) => {
     return () => clearInterval(interval);
   }, [lineData, setLineData]);
 
-  const typeMessage = async (ld, message, message_id = null, delay = 50) => {
+  const typeMessage = async (ld, message, message_id = null, delay = 25) => {
     let mkey = message_id === null ? `message-${ld.length}` :  message_id;
 
     for (let i = 0; i < message.length; i++) {
