@@ -17,31 +17,50 @@ const TerminalController = (props = {}) => {
     <TerminalOutput key="welcome-0"></TerminalOutput>
   ]);
 
-  const updateWelcomeMessage = async () => {
+  const updateWelcomeMessage = async (lineData) => {
     const ollamaAvailability = await checkOllamaAvailability();
     let welcomeMessage = ollamaAvailability
       ? "Welcome to the Ollama Web Console! 👋"
       : "Ollama is not available. Please run ollama locally.";
 
     if (getMessage("welcome-0") !== welcomeMessage) {
-      typeMessage([], welcomeMessage, "welcome-0");
+      lineData[0] = <TerminalOutput key="welcome-0">{welcomeMessage}</TerminalOutput>;
+      setLineData([...lineData]);
     }
 
     store.set('ollama-available', ollamaAvailability);
   };
 
   useEffect(() => {
-    updateWelcomeMessage();
+    updateWelcomeMessage(lineData);
     const interval = setInterval(updateWelcomeMessage, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [lineData, setLineData]);
 
   const typeMessage = async (ld, message, message_id = null, delay = 50) => {
-    let mkey = message_id ?? `message-${ld.length}`;
-    ld.push(<TerminalOutput key={mkey}>{message}</TerminalOutput>);
-    setLineData(ld);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    let mkey = message_id === null ? `message-${ld.length}` :  message_id;
+
+    for (let i = 0; i < message.length; i++) {
+        let lastValue = "";
+
+        if (i === 0) {
+            ld.push(<TerminalOutput key={mkey}>{message[i]}</TerminalOutput>);
+            setLineData([...ld]);
+        } else {
+            for (let j = 0; j < ld.length; j++) {
+                if (ld[j].key === mkey) {
+                    lastValue = ld[j].props.children + message[i];
+                    if (lastValue !== undefined) {
+                        ld[j] = <TerminalOutput key={mkey}>{lastValue}</TerminalOutput>;
+                        setLineData([...ld]);
+                    }
+                    break;
+                }
+            }
+        }
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
   };
 
   let color = 'dark' === store.get('color') ? ColorMode.Dark : ColorMode.Light;
@@ -94,10 +113,10 @@ const TerminalController = (props = {}) => {
   }
 
   const help = async (ld) => {
-      await typeMessage(ld, "Available commands:");
-      await typeMessage(ld, "help - display this help message");
-      await typeMessage(ld, "toggle-color-mode - toggle between light and dark mode");
-      await typeMessage(ld, "clear-history - clear the command history");
+      await typeMessage(ld, "Available commands:", "help-0-" + Math.random() );
+      await typeMessage(ld, "help - display this help message", "help-1-" + Math.random() );
+      await typeMessage(ld, "toggle-color-mode - toggle between light and dark mode", "help-2-" + Math.random() );
+      await typeMessage(ld, "clear-history - clear the command history", "help-3-" + Math.random() );
   }
 
   const toggleColorMode = () => {
