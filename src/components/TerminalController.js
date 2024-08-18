@@ -17,7 +17,7 @@ const TerminalController = (props = {}) => {
     <TerminalOutput key="welcome-0"></TerminalOutput>
   ]);
 
-  const updateWelcomeMessage = async (lineData) => {
+  const updateWelcomeMessage = async () => {
     const ollamaAvailability = await checkOllamaAvailability();
     let welcomeMessage = ollamaAvailability
       ? "Welcome to the Ollama Web Console! 👋"
@@ -32,7 +32,7 @@ const TerminalController = (props = {}) => {
   };
 
   useEffect(() => {
-    updateWelcomeMessage(lineData);
+    updateWelcomeMessage();
     const interval = setInterval(updateWelcomeMessage, 5000);
 
     return () => clearInterval(interval);
