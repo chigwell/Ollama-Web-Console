@@ -17,7 +17,10 @@ const TerminalController = (props = {}) => {
     <TerminalOutput key="welcome-0"></TerminalOutput>
   ]);
 
-  const updateWelcomeMessage = async () => {
+
+
+  useEffect(() => {
+    const updateWelcomeMessage = async () => {
     const ollamaAvailability = await checkOllamaAvailability();
     let welcomeMessage = ollamaAvailability
       ? "Welcome to the Ollama Web Console! 👋"
@@ -30,8 +33,6 @@ const TerminalController = (props = {}) => {
 
     store.set('ollama-available', ollamaAvailability);
   };
-
-  useEffect(() => {
     updateWelcomeMessage();
     const interval = setInterval(updateWelcomeMessage, 5000);
 
@@ -62,8 +63,6 @@ const TerminalController = (props = {}) => {
         await new Promise(resolve => setTimeout(resolve, delay));
     }
   };
-
-  let color = 'dark' === store.get('color') ? ColorMode.Dark : ColorMode.Light;
 
   const addToHistory = (input) => {
     if( store.get('history')  === undefined ) {
@@ -99,9 +98,69 @@ const TerminalController = (props = {}) => {
             clearHistory();
             break;
         default:
+            if (store.get('ollama-available')) {
+                chat(input, ld);
+            }
+            else {
+               help(ld);
+            }
             break;
     }
   }
+
+  const chat = async (input, ld) => {
+      const requestOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: "llama3.1:8b",
+          prompt: input,
+          stream: true
+        })
+      };
+
+      try {
+        const latestMessage = `output-${lineData.length}-`+Math.random();
+        const newLineData = <TerminalOutput key={latestMessage} />;
+        ld.push(newLineData);
+        setLineData(ld);
+
+        const response = await fetch("http://localhost:11434/api/generate", requestOptions);
+        const reader = response.body.getReader();
+
+        const processChunk = async ({ done, value }) => {
+          if (done) {
+            console.log("Stream complete");
+            return;
+          }
+
+          const chunkText = new TextDecoder().decode(value);
+          console.log(chunkText);
+
+          const chunk = JSON.parse(chunkText);
+          if (chunk.done === false && chunk.response !== undefined) {
+            const output = chunk.response ? chunk.response : "";
+            setLineData((prevLineData) => {
+              const index = prevLineData.findIndex(line => line.key === latestMessage);
+              if (index !== -1) {
+                const existingText = prevLineData[index].props.children || "";
+                const updatedLine = React.cloneElement(prevLineData[index], {
+                  children: existingText + output
+                });
+                return [...prevLineData.slice(0, index), updatedLine, ...prevLineData.slice(index + 1)];
+              }
+              return prevLineData;
+            });
+          }
+
+          reader.read().then(processChunk);
+        };
+
+        reader.read().then(processChunk);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
 
   const getMessage = (message_id) => {
     let ld = [...lineData];
