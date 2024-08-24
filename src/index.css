@@ -17,3 +17,6 @@ code {
 .react-terminal-wrapper:after {
   padding-top: 10px;
 }
+.react-terminal-line {
+    white-space: break-spaces !important;
+}
