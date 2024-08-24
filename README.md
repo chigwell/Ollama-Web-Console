@@ -1,70 +1,91 @@
-# Getting Started with Create React App
+# OLLAMA Web Console
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This React-based project serves as a web console interacting with the OLLAMA backend. It provides a terminal interface where users can input commands, receive responses, and manage application states, leveraging React and an external REST API.
 
-## Available Scripts
+## Components
 
-In the project directory, you can run:
+- **App.js**: The main React component that renders the `TerminalController`.
+- **TerminalController.js**: Manages the terminal's state, input/output, and the commands passed to the OLLAMA backend.
+- **utilities.js**: Contains utility functions such as checking the availability of the OLLAMA models.
 
-### `npm start`
+## Setup
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/chigwell/Ollama-Web-Console.git
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm start
+   ```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Live Demo
 
-### `npm test`
+View a live demo of the application: [Ollama Web Console Live Demo](https://ollama-web-console.vercel.app/)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Configuring CORS for OLLAMA
 
-### `npm run build`
+Configuring CORS settings is crucial for the security and proper functioning of the OLLAMA backend. Here's how to set up CORS for different operating systems:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### macOS
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Allow All Domains**:
+  ```bash
+  launchctl setenv OLLAMA_ORIGINS "*"
+  ```
+- **Specific Domains**:
+  ```bash
+  launchctl setenv OLLAMA_ORIGINS "google.com,linkedin.com"
+  ```
+- Restart the OLLAMA application to apply these settings.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Linux
 
-### `npm run eject`
+- **Edit the systemd service file**:
+  ```bash
+  systemctl edit ollama.service
+  ```
+- Add the following in the `[Service]` section for unrestricted access:
+  ```
+  [Service]
+  Environment="OLLAMA_ORIGINS=*"
+  ```
+  Or for specific domains:
+  ```
+  [Service]
+  Environment="OLLAMA_ORIGINS=google.com,linkedin.com"
+  ```
+- Reload systemd and restart the OLLAMA service:
+  ```bash
+  systemctl daemon-reload
+  systemctl restart ollama
+  ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Windows
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- Navigate to **Control Panel** > **System and Security** > **System** > **Advanced system settings** > **Environment Variables**.
+- Add or edit `OLLAMA_ORIGINS`. To allow all domains:
+  ```
+  OLLAMA_ORIGINS=*
+  ```
+  Or for specific domains:
+  ```
+  OLLAMA_ORIGINS=google.com,linkedin.com
+  ```
+- Apply the changes and restart OLLAMA from a new terminal window.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Security Note
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Using `OLLAMA_ORIGINS="*"` allows all domains to access your OLLAMA resources, which might be insecure. It's recommended to specify only trusted domains to safeguard your data and services.
 
-## Learn More
+## Contributing
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Contributions are welcome! Please submit pull requests with your enhancements.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## License
 
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the MIT License. 
