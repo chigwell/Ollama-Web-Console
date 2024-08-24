@@ -4,6 +4,15 @@ import store from 'store-js';
 import { checkOllamaAvailability } from '../utils/utilities';
 
 
+const BASE_URL = "http://localhost:11434/api";
+const GENERATE_URL = BASE_URL + "/generate";
+const CHAT_URL = BASE_URL + "/chat";
+const LIST_MODELS_URL = BASE_URL + "/tags";
+
+const MODEL = "llama3.1:8b";
+const HISTORY_SIZE = 10;
+
+
 const TerminalController = (props = {}) => {
   if (store.get('color') === undefined) {
     store.set('color', 'dark');
@@ -16,8 +25,6 @@ const TerminalController = (props = {}) => {
   const [lineData, setLineData] = useState([
     <TerminalOutput key="welcome-0"></TerminalOutput>
   ]);
-
-
 
   useEffect(() => {
     const updateWelcomeMessage = async () => {
@@ -64,14 +71,15 @@ const TerminalController = (props = {}) => {
     }
   };
 
-  const addToHistory = (input) => {
+  const addToHistory = (input, role="user", timestamp=new Date().toISOString()) => {
     if( store.get('history')  === undefined ) {
         store.set('history', []);
     }
+    console.log(store.get('history'))
     let history = store.get('history');
-    history.push(input);
+    history.push({"role": role, "content": input, "timestamp": timestamp});
 
-    if(history.length > 10) {
+    if(history.length > HISTORY_SIZE) {
         history.shift();
     }
     store.set('history', history);
@@ -82,7 +90,7 @@ const TerminalController = (props = {}) => {
   }
 
   const onInput = (input) => {
-    addToHistory(input);
+    addToHistory(input, "user");
     let ld = [...lineData];
     const inputKey = `input-${ld.length}`;
     ld.push(<TerminalInput key={inputKey}>{input}</TerminalInput>);
@@ -109,37 +117,39 @@ const TerminalController = (props = {}) => {
   }
 
   const chat = async (input, ld) => {
+      console.log(store.get('history'))
       const requestOptions = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: "llama3.1:8b",
-          prompt: input,
+          model: MODEL,
+          messages: store.get('history'),
           stream: true
         })
       };
 
       try {
         const latestMessage = `output-${lineData.length}-`+Math.random();
-        const newLineData = <TerminalOutput key={latestMessage} />;
+        const newLineData = <TerminalOutput key={latestMessage}/>;
         ld.push(newLineData);
         setLineData(ld);
 
-        const response = await fetch("http://localhost:11434/api/generate", requestOptions);
+        const response = await fetch(CHAT_URL, requestOptions);
         const reader = response.body.getReader();
 
         const processChunk = async ({ done, value }) => {
           if (done) {
-            console.log("Stream complete");
+            const latestMessage = lineData[lineData.length - 1].props.children;
+            console.log("latestMessage: ", latestMessage);
+            addToHistory(latestMessage, "assistant");
             return;
           }
 
           const chunkText = new TextDecoder().decode(value);
-          console.log(chunkText);
 
           const chunk = JSON.parse(chunkText);
-          if (chunk.done === false && chunk.response !== undefined) {
-            const output = chunk.response ? chunk.response : "";
+          if (chunk.done === false && chunk.message.content !== undefined) {
+            const output = chunk.message.content ? chunk.message.content : "";
             setLineData((prevLineData) => {
               const index = prevLineData.findIndex(line => line.key === latestMessage);
               if (index !== -1) {
@@ -163,7 +173,7 @@ const TerminalController = (props = {}) => {
     };
 
   const getMessage = (message_id) => {
-    let ld = [...lineData];
+    const ld = [...lineData];
     for (let i = 0; i < ld.length; i++) {
         if (ld[i].key === message_id) {
             return ld[i].props.children;
@@ -172,10 +182,11 @@ const TerminalController = (props = {}) => {
   }
 
   const help = async (ld) => {
-      await typeMessage(ld, "Available commands:", "help-0-" + Math.random() );
-      await typeMessage(ld, "help - display this help message", "help-1-" + Math.random() );
-      await typeMessage(ld, "toggle-color-mode - toggle between light and dark mode", "help-2-" + Math.random() );
-      await typeMessage(ld, "clear-history - clear the command history", "help-3-" + Math.random() );
+      const lastMessageNumber = ld.length;
+      await typeMessage(ld, "Available commands:", "help-" + lastMessageNumber + "-" + Math.random() );
+      await typeMessage(ld, "help - display this help message", "help-" + lastMessageNumber + "-" + Math.random() );
+      await typeMessage(ld, "toggle-color-mode - toggle between light and dark mode", "help-"+ lastMessageNumber + "-" + Math.random() );
+      await typeMessage(ld, "clear-history - clear the command history", "help-" + lastMessageNumber + "-" + Math.random() );
   }
 
   const toggleColorMode = () => {
